@@ -1,0 +1,187 @@
+\documentclass[12pt,a4paper]{report}
+
+% -------------------------
+% Encoding and fonts
+% -------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian,english]{babel}   % English main, Russian secondary
+
+% -------------------------
+% Page layout and spacing
+% -------------------------
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{setspace}
+\doublespacing
+
+% -------------------------
+% Mathematics, tables, and figures
+% -------------------------
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{array}
+\usepackage{pdflscape}
+\usepackage{makecell}
+\usepackage{longtable}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% -------------------------
+% TikZ, if needed for diagrams
+% -------------------------
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc}
+
+% -------------------------
+% References and hyperlinks
+% -------------------------
+\usepackage{natbib}
+\bibliographystyle{plainnat}
+\usepackage[hidelinks]{hyperref}
+% -------------------------
+% Safe inclusion helpers for notebook-exported figures/tables
+% If a file is missing, the thesis still compiles and shows a visible placeholder.
+% -------------------------
+\newcommand{\safefigure}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{%
+  \fbox{\parbox{0.85\textwidth}{\centering Missing file: \texttt{\detokenize{#2}}}}}%
+}
+
+\newcommand{\safetablepdf}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{%
+  \fbox{\parbox{0.85\textwidth}{\centering Missing table file: \texttt{\detokenize{#2}}}}}%
+}
+
+% -------------------------
+% Custom title page (HSE Faculty of Computer Science)
+% -------------------------
+\makeatletter
+\renewcommand{\maketitle}{%
+\begin{titlepage}
+\centering
+
+% Top: university info
+{\scshape\large
+FEDERAL STATE AUTONOMOUS EDUCATIONAL INSTITUTION \\
+FOR HIGHER EDUCATION \\
+NATIONAL RESEARCH UNIVERSITY \\
+``HIGHER SCHOOL OF ECONOMICS''
+\par}
+
+\vspace{1cm}
+
+% Faculty
+{\large Faculty of Computer Science\par}
+
+\vspace{1cm}
+
+% Author name
+{\Large \textbf{Muhammad Suliman}\par}
+
+\vspace{1cm}
+
+% Russian title (optional, can be left blank or same as English)
+{\large Russian title: \textit{``Экономические и экологические потери от лесных пожаров с использованием машинного обучения''}\par}
+
+\vspace{0.5cm}
+
+% English title
+{\Large \textbf{Economic and Ecological Losses from Wildfires using Machine Learning}\par}
+
+\vspace{1cm}
+
+% Qualification line
+{\large Qualification paper -- Master of Science Dissertation\par}
+
+\vspace{0.5cm}
+
+% Field of study
+{\large Field of study 01.04.02 ``Applied Mathematics and Informatics''\par}
+{\large Program: ``Data Science''\par}
+
+\vspace{0.5cm}
+
+\begin{flushright}
+\begin{tabularx}{0.5\textwidth}{X}
+Student: \textbf{Muhammad Suliman} \\[0.5cm]
+Supervisor: \textbf{Ramon Antonio Rodriges Zalipynis} \\
+\end{tabularx}
+\end{flushright}
+
+\vfill
+
+% Bottom: city and year
+{\large Moscow, 2026\par}
+
+\end{titlepage}
+}
+\makeatother
+
+\begin{document}
+
+% -------------------------
+% Front matter
+% -------------------------
+\pagenumbering{roman}
+
+\maketitle
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+Wildfires are increasingly important socioecological hazards whose consequences extend beyond fire occurrence and burned area. Although recent machine-learning research has improved wildfire prediction, fewer studies connect wildfire hazard information with economic and ecological consequence assessment. This thesis develops a county-level wildfire risk prediction and assessment pipeline using publicly accessible datasets. The main empirical target is wildfire Expected Annual Loss from the FEMA National Risk Index, which provides a monetary county-level loss indicator. Baseline exposure, value, vulnerability, and resilience predictors are combined with environmental variables derived from topography, land cover, and warm-season climate summaries.
+
+Several regression models are evaluated, including Linear Regression, Ridge Regression, Random Forest, and Gradient Boosting. The results show that the county-only baseline provides meaningful predictive signal, while environmental augmentation substantially improves performance. The strongest results are obtained with the combined Random Forest model, and state-wise grouped validation confirms that the model retains useful predictive power under stricter geographic testing. The pipeline also produces county-level risk-assessment outputs by converting predicted log-transformed wildfire EAL back into monetary units and ranking counties by predicted wildfire loss.
+
+Because the thesis title also addresses ecological consequences, an exploratory ecological risk-screening layer is added. This layer does not estimate ecological losses directly; instead, it combines predicted wildfire-risk percentile with natural vegetation exposure to identify counties where high monetary wildfire risk overlaps with high forest, shrub, and grass coverage.
+
+The novel contribution of the thesis is the general consequence-oriented modeling framework rather than the specific territory of application. Unlike much previous wildfire-machine-learning work that focuses mainly on fire occurrence, susceptibility, spread, or burned area, this thesis connects wildfire-relevant environmental predictors with exposure, vulnerability, resilience, and a monetary loss-oriented target. The new element is the integration of county-level wildfire Expected Annual Loss modeling, environmental augmentation, state-wise geographic validation, and an exploratory ecological risk-screening layer within one reproducible workflow. The main insights gained are that environmental predictors substantially improve wildfire-loss prediction, that geographic validation gives a more realistic estimate of transferability, and that monetary wildfire risk can be complemented by ecological exposure screening.
+
+In addition, supporting results from the An Giang, Vietnam wildfire prediction study are reported. Part of this work was successfully presented at the 4th International Conference on Distributed Computing and High Performance Computing (DCHPC 2026), and the associated paper is expected to appear as a Web of Science/Scopus paper. The conference certificate is included in Appendix~\ref{app:conference_certificate}.
+
+\chapter*{Description of the Use of a Generative Model}
+\addcontentsline{toc}{chapter}{Description of the Use of a Generative Model}
+
+During the preparation of this thesis, generative artificial intelligence tools were used only as auxiliary support for improving academic style, grammar, clarity, and wording. The research design, data preparation, experiments, numerical results, interpretation, conclusions, and final decisions were completed by the author in tight collaboration with the supervisor.
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+
+% -------------------------
+% Main matter
+% -------------------------
+\pagenumbering{arabic}
+
+\include{chapters/chapter1_introduction}
+\include{chapters/chapter2_literature_review}
+\include{chapters/chapter3_methodology}
+\include{chapters/chapter4_results}
+\include{chapters/chapter5_discussion}
+\include{chapters/chapter6_conclusion}
+
+% -------------------------
+% Appendices
+% -------------------------
+\appendix
+\include{appendices/appendix_supporting_outputs}
+\include{appendices/appendix_creek_fire_pipeline}
+\include{appendices/appendix_conference_certificate}
+
+% -------------------------
+% Bibliography
+% -------------------------
+\clearpage
+\bibliography{references}
+
+\end{document}
