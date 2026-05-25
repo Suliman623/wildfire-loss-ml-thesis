@@ -10,7 +10,6 @@
 The final version of the thesis is available as [`main.pdf`](./main.pdf).
 
 ## 📁 Repository Structure
-
 .
 ├── main.pdf
 ├── Chapters/
@@ -32,8 +31,6 @@ The final version of the thesis is available as [`main.pdf`](./main.pdf).
 │   ├── 7_ecological_risk_proxy.ipynb
 │   └── 8_economic_ecological_overlap.ipynb
 └── README.md
-
-
 
 ## 🎯 Overview
 
