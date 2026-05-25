@@ -1,0 +1,618 @@
+\chapter{Experimental Results and Risk Assessment}
+\label{chap:results}
+
+\section{Overview}
+
+This chapter presents the experimental results of the county-level wildfire-loss modeling pipeline in monetary units. Following the literature gap identified in Chapter~\ref{chap:litreview}, the experimental pipeline was designed to move beyond wildfire hazard prediction alone and toward a consequence-oriented formulation in which the prediction target is wildfire \emph{Expected Annual Loss} (EAL). The current experiments use publicly accessible county-level data and therefore serve as a first scalable baseline rather than a final loss model.
+
+The modeling workflow was developed in six connected stages. First, a county-level wildfire EAL target was constructed from the FEMA National Risk Index (NRI). Second, baseline county-level exposure, value, vulnerability, and resilience predictors were prepared. Third, baseline regression models were trained and evaluated. Fourth, ablation and error analyses were conducted to understand the baseline model. Fifth, environmental predictors derived from topography, land cover, and warm-season climate summaries were added. Sixth, the combined model was evaluated under a stricter state-wise grouped validation protocol in order to assess geographic robustness.
+
+\section{Target Variable and Dataset Construction}
+
+The main prediction target in the current experiments is county-level wildfire expected annual loss, denoted as \texttt{wildfire\_eal}, obtained from the FEMA National Risk Index. The NRI provides standardized risk indicators based on expected annual loss, social vulnerability, and community resilience, making it suitable for a first scalable loss-oriented wildfire-risk modeling baseline \citep{fema2025nri_technical,fema2025nri_methodology}. Because the raw EAL values are strongly right-skewed, the modeling target was transformed using
+\[
+y = \log(1 + \texttt{wildfire\_eal}),
+\]
+which produced a more stable target distribution for regression.
+
+The initial NRI-based county dataset contained 3232 geographic units. After removing 88 rows with missing wildfire target values, the cleaned target table contained 3144 counties. The exported target construction summary is included in Chapter~\ref{chap:methodology}. Figure~\ref{fig:eal_raw_log_distribution} shows the distributional motivation for applying the logarithmic transformation. The raw wildfire EAL distribution is highly concentrated near low values with a long right tail, whereas the transformed target is more suitable for regression modeling.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=\textwidth]{figures/notebook1/figure_1_wildfire_eal_raw_vs_log_distribution.pdf}
+    \caption{Distribution of FEMA NRI wildfire Expected Annual Loss before and after logarithmic transformation. The raw target is highly right-skewed, while the log-transformed target is more suitable for regression modeling.}
+    \label{fig:eal_raw_log_distribution}
+\end{figure}
+
+\section{Baseline County-Level Risk Model}
+
+The first modeling experiment evaluated whether county-level wildfire EAL could be predicted using only accessible county variables without additional environmental augmentation. Several regression models were tested, including Linear Regression, Ridge Regression, Random Forest, and Gradient Boosting. Among these, Random Forest produced the strongest baseline performance.
+
+Table~\ref{tab:baseline_model_performance_summary_export} reports the combined test-set and cross-validation performance of the baseline county-level models. For the baseline county-only model, the Random Forest achieved a test-set $R^2$ of approximately 0.483, with RMSE of approximately 1.675 and MAE of approximately 1.292. Under 5-fold cross-validation, the same model achieved a mean $R^2$ of approximately 0.504 with standard deviation 0.017, and a mean RMSE of approximately 1.661 with standard deviation 0.028. These results indicate that accessible county-level exposure, value, and resilience variables already contain a meaningful signal for predicting wildfire EAL, but they also suggest that a substantial part of the variation remains unexplained.
+
+\begin{table}[htbp]
+    \centering
+    \safetablepdf[width=\textwidth]{tables/notebook3/table_3_combined_baseline_model_performance_summary.pdf}
+    \caption{Combined test-set and cross-validation performance of the baseline county-level wildfire EAL models.}
+    \label{tab:baseline_model_performance_summary_export}
+\end{table}
+
+Figure~\ref{fig:baseline_cv_r2_comparison} compares the cross-validation $R^2$ values across the baseline models. The Random Forest model achieved the highest mean cross-validation $R^2$, followed closely by Gradient Boosting. Figure~\ref{fig:baseline_cv_rmse_comparison} shows the corresponding cross-validation RMSE comparison, again indicating that the tree-based ensemble models performed better than the linear baselines.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.82\textwidth]{figures/notebook3/figure_3_cv_r2_baseline_model_comparison.pdf}
+    \caption{Cross-validation $R^2$ comparison for baseline county-level models. Random Forest achieved the strongest baseline performance.}
+    \label{fig:baseline_cv_r2_comparison}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.82\textwidth]{figures/notebook3/figure_4_cv_rmse_baseline_model_comparison.pdf}
+    \caption{Cross-validation RMSE comparison for baseline county-level models.}
+    \label{fig:baseline_cv_rmse_comparison}
+\end{figure}
+
+The weaker performance of Linear Regression and Ridge Regression compared with Random Forest suggests that the relationship between county predictors and wildfire loss is nonlinear. In other words, county-level wildfire risk in monetary units cannot be adequately represented by a simple linear combination of exposure and vulnerability indicators.
+
+\section{Baseline Diagnostics and Feature Importance}
+
+The Random Forest baseline was further analyzed using predicted-versus-actual plots, residual diagnostics, and feature importance. These diagnostics help show whether the baseline model is merely memorizing scale effects or whether it captures meaningful signals related to exposure, vulnerability, and resilience.
+
+Figure~\ref{fig:baseline_predicted_vs_actual} shows the predicted versus actual log-transformed wildfire EAL values for the best baseline model. The scatter pattern indicates that the model captures part of the target variation, but the spread around the diagonal line also confirms that the county-only baseline has limited explanatory power.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.72\textwidth]{figures/notebook3/figure_5_predicted_vs_actual_best_model.pdf}
+    \caption{Predicted versus actual log-transformed wildfire EAL for the best baseline model.}
+    \label{fig:baseline_predicted_vs_actual}
+\end{figure}
+
+Figure~\ref{fig:baseline_rf_feature_importance} presents the top Random Forest feature importances for the baseline county-level model. The feature-importance results help identify which exposure, value, vulnerability, and resilience variables contributed most strongly before environmental predictors were added.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.78\textwidth]{figures/notebook3/figure_7_random_forest_feature_importance_top10.pdf}
+    \caption{Top Random Forest feature importances for the baseline county-level model.}
+    \label{fig:baseline_rf_feature_importance}
+\end{figure}
+
+The baseline diagnostics are useful, but they also show the limits of county-only modeling. The baseline model captures meaningful variation but does not yet fully represent environmental wildfire hazard context. This motivated the environmental augmentation step described later in this chapter.
+
+\section{Ablation Analysis of County-Level Variables}
+
+To better understand which county-level variables contributed most to performance, an ablation study was conducted on the baseline Random Forest model. Table~\ref{tab:rf_ablation_performance_export} reports the Random Forest ablation results for different feature-removal settings. The full feature set performed best, with cross-validated $R^2 \approx 0.504$. Removing county area caused only a modest reduction in performance, indicating that although county size contributes to predictive quality, it is not the sole driver of model performance. Removing social vulnerability caused a somewhat larger reduction, while removing community resilience produced a noticeably stronger drop. When both vulnerability and resilience variables were removed together, performance declined to approximately 0.419.
+
+% THIS IS MADE THROUGH LATEX
+%\begin{table}[htbp]
+    %\centering
+    %\safetablepdf[width=\textwidth]{tables/notebook4/table_1_random_forest_ablation_performance.pdf}
+    %\caption{Random Forest ablation results for the baseline county-level feature set.}
+    %\label{tab:rf_ablation_performance_export}
+%\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Random Forest ablation results for the baseline county-level feature set.}
+\label{tab:rf_ablation_performance_export}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.12}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Feature set & No. features & MAE & RMSE & Test $R^2$ & CV $R^2$ mean & CV $R^2$ std & CV RMSE mean & CV RMSE std \\
+\midrule
+\texttt{all\_features} & 10.0000 & 1.2920 & 1.6748 & 0.4832 & 0.5039 & 0.0173 & 1.6613 & 0.0283 \\
+\texttt{without\_area} & 9.0000 & 1.3118 & 1.6745 & 0.4834 & 0.4926 & 0.0160 & 1.6802 & 0.0313 \\
+\texttt{simple\_core} & 6.0000 & 1.2965 & 1.6896 & 0.4740 & 0.4891 & 0.0101 & 1.6860 & 0.0230 \\
+\texttt{without\_vulnerability} & 9.0000 & 1.3234 & 1.7051 & 0.4643 & 0.4854 & 0.0177 & 1.6920 & 0.0365 \\
+\texttt{without\_resilience} & 9.0000 & 1.4144 & 1.8248 & 0.3865 & 0.4338 & 0.0264 & 1.7744 & 0.0349 \\
+\texttt{without\_sovi\_resl} & 8.0000 & 1.4475 & 1.8565 & 0.3650 & 0.4192 & 0.0290 & 1.7972 & 0.0432 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Figure~\ref{fig:ablation_cv_r2} visualizes the cross-validated $R^2$ values under the ablation settings. The figure makes the performance decline clearer and shows that vulnerability and resilience-related variables add useful predictive information beyond general exposure and spatial-scale variables.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.82\textwidth]{figures/notebook4/figure_1_ablation_cv_r2.pdf}
+    \caption{Cross-validated $R^2$ under different feature-ablation settings.}
+    \label{fig:ablation_cv_r2}
+\end{figure}
+
+These ablation results are important because they show that the model is not dominated only by generic spatial scale effects. Rather, county-level social and resilience-related variables provide additional signal for wildfire EAL prediction. This supports the broader thesis argument that wildfire losses depend not only on hazard and exposure, but also on underlying vulnerability and resilience conditions.
+
+\section{Environmental Augmentation of the County Model}
+
+The next experiment extended the county baseline by adding wildfire-relevant environmental predictors derived from public geospatial datasets. These included topographic variables, land-cover fractions, and warm-season climate summaries. The goal of this step was to test whether hazard-relevant environmental context could improve the loss-oriented county model.
+
+Table~\ref{tab:environmental_model_comparison_export} reports the model comparison after adding environmental predictors. The results show a substantial performance improvement, especially for the combined baseline-plus-environment feature set. This indicates that the model benefits from combining exposure and vulnerability information with environmental wildfire-hazard context.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Model comparison after adding environmental predictors to the county-level baseline dataset.}
+    \label{tab:environmental_model_comparison_export}
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.1cm} >{\raggedright\arraybackslash}p{2.0cm} *{5}{>{\centering\arraybackslash}p{1.2cm}}}
+        \toprule
+        Feature set & Model & MAE & RMSE & $R^2$ & CV $R^2$ & CV RMSE \\
+        \midrule
+        Combined baseline + environment & Random Forest & 0.779 & 1.011 & 0.829 & $0.795 \pm 0.022$ & $1.049 \pm 0.023$ \\
+        Combined baseline + environment & Gradient Boosting & 0.864 & 1.085 & 0.804 & $0.776 \pm 0.019$ & $1.099 \pm 0.018$ \\
+        Environmental only & Random Forest & 0.817 & 1.112 & 0.794 & $0.769 \pm 0.017$ & $1.118 \pm 0.030$ \\
+        Environmental only & Gradient Boosting & 0.970 & 1.255 & 0.737 & $0.713 \pm 0.018$ & $1.245 \pm 0.034$ \\
+        Baseline (CONUS) & Random Forest & 1.287 & 1.631 & 0.556 & $0.520 \pm 0.028$ & $1.609 \pm 0.027$ \\
+        Baseline (CONUS) & Gradient Boosting & 1.316 & 1.649 & 0.546 & $0.498 \pm 0.037$ & $1.646 \pm 0.046$ \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+Figure~\ref{fig:environmental_performance_gain} summarizes the Random Forest performance gain from county-only predictors to environmental-only and combined predictor sets. The figure clearly shows that environmental predictors produce the largest improvement in predictive performance.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.85\textwidth]{figures/notebook5/figure_2_random_forest_environmental_performance_gain.pdf}
+    \caption{Random Forest performance gain from county-only predictors to environmental-only and combined predictor sets.}
+    \label{fig:environmental_performance_gain}
+\end{figure}
+
+The improvement was substantial. With the combined predictor set, the Random Forest achieved a test-set $R^2$ of approximately 0.829, RMSE of approximately 1.011, and MAE of approximately 0.779. Under 5-fold cross-validation, the same model achieved mean $R^2 \approx 0.795$ with standard deviation 0.022, and mean RMSE of approximately 1.049 with standard deviation 0.023. This represents a major improvement over the county-only baseline and shows that wildfire EAL is strongly associated with environmental conditions in addition to county-level exposure and resilience variables.
+
+A particularly important result is that even the \emph{environmental-only} model performed strongly, achieving a test-set $R^2$ of approximately 0.793 and cross-validated $R^2 \approx 0.768$. This indicates that environmental variables carry much of the transferable predictive signal. In other words, once hazard-relevant environmental context is introduced, the model becomes far more informative than a purely socioeconomic county baseline.
+
+\section{Feature Importance in the Combined Model}
+
+Feature-importance analysis of the combined Random Forest model showed that the most influential predictors were primarily environmental. Table~\ref{tab:combined_rf_feature_importance_export} lists the feature-importance values for the combined model after environmental augmentation. The strongest contributors included warm-season precipitation, warm-season vapor pressure deficit, shrub fraction, county area, elevation, building value, population, slope, and warm-season wind speed.
+
+\begin{table}[htbp]
+    \centering
+    \safetablepdf[width=0.8\textwidth]{tables/notebook5/table_9_combined_random_forest_feature_importance.pdf}
+    \caption{Feature importance values for the combined Random Forest model after environmental augmentation.}
+    \label{tab:combined_rf_feature_importance_export}
+\end{table}
+
+Figure~\ref{fig:combined_rf_feature_importance} visualizes the top feature importances for the combined Random Forest model. The dominance of environmental variables in this figure supports the interpretation that the improved model is learning a wildfire-specific environmental risk signal rather than relying only on demographic or economic scale proxies.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.86\textwidth]{figures/notebook5/figure_4_top15_combined_rf_feature_importance.pdf}
+    \caption{Top feature importances for the combined Random Forest model. Environmental predictors dominate the most important variables.}
+    \label{fig:combined_rf_feature_importance}
+\end{figure}
+
+The prominence of precipitation and vapor pressure deficit is consistent with the broader wildfire-climate literature. Vapor pressure deficit is closely related to atmospheric drying demand and fuel aridity, both of which influence wildfire activity. Similarly, shrub fraction and slope are plausible wildfire-related factors because they influence fuel structure and fire behavior. These results support the interpretation that the combined model is learning a more wildfire-specific risk signal rather than relying mainly on broad demographic or economic proxies.
+
+\section{State-Wise Geographic Validation}
+
+Although random train/test splits provide a useful first benchmark, they may still place geographically similar counties in both training and testing data. This can lead to optimistic performance estimates when the data are spatially structured. To assess whether the model generalized more robustly across geography, a stricter validation experiment was conducted using grouped cross-validation by state.
+
+Table~\ref{tab:statewise_validation_results_export} summarizes the random split and state-wise grouped validation results for the county-only, environmental-only, and combined feature sets. The grouped validation results are lower than the random-split results, as expected, because the grouped setup requires the model to generalize to held-out states rather than only unseen counties from the same geographic mixture.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Random split and state-wise grouped validation results for county-only, environmental-only, and combined feature sets.}
+    \label{tab:statewise_validation_results_export}
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.4cm} >{\centering\arraybackslash}p{0.9cm} *{6}{>{\centering\arraybackslash}p{1.15cm}}}
+        \toprule
+        Feature set & $n$ features & Random $R^2$ & Random RMSE & Random MAE & Grouped CV $R^2$ & Grouped CV RMSE & Grouped CV MAE \\
+        \midrule
+        Combined baseline + environment & 20 & 0.806 & 1.069 & 0.809 & $0.603 \pm 0.041$ & $1.404 \pm 0.155$ & $1.080 \pm 0.113$ \\
+        Environmental only & 10 & 0.782 & 1.133 & 0.830 & $0.522 \pm 0.074$ & $1.534 \pm 0.164$ & $1.169 \pm 0.117$ \\
+        Baseline (CONUS) & 10 & 0.546 & 1.636 & 1.284 & $0.290 \pm 0.101$ & $1.863 \pm 0.109$ & $1.486 \pm 0.098$ \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+Figure~\ref{fig:random_vs_statewise_r2} compares random-split $R^2$ with state-wise grouped-validation $R^2$. The figure shows that all feature sets experience a performance reduction under grouped validation, but the combined model remains the strongest setup.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.85\textwidth]{figures/notebook6/figure_1_random_vs_statewise_grouped_r2.pdf}
+    \caption{Comparison between random-split $R^2$ and state-wise grouped-validation $R^2$.}
+    \label{fig:random_vs_statewise_r2}
+\end{figure}
+
+Under this stronger state-wise validation, the combined Random Forest model remained the best-performing setup. Its random-split $R^2$ was approximately 0.806, while its grouped-by-state cross-validated $R^2$ was approximately 0.602. Although this is a noticeable reduction, it is expected because state-wise validation is substantially harder than random splitting. More importantly, the model does not collapse under this stricter evaluation, which indicates that it is learning a meaningful transferable wildfire-risk signal rather than only benefiting from random geographic mixing.
+
+The comparison between feature sets under grouped validation is especially informative. The baseline county-only model achieved grouped $R^2 \approx 0.290$, the environmental-only model achieved grouped $R^2 \approx 0.522$, and the combined model achieved grouped $R^2 \approx 0.602$. This clearly shows that environmental variables provide the strongest transferable predictive signal across states, while county-level exposure and resilience variables still add useful incremental information when combined with them.
+
+Figure~\ref{fig:grouped_model_feature_importance} presents feature importances for the best model under state-wise grouped validation. The important predictors remain consistent with the environmental-augmentation results, reinforcing the importance of climate, land-cover, terrain, and exposure-related information.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.84\textwidth]{figures/notebook6/figure_2_best_grouped_model_feature_importance.pdf}
+    \caption{Feature importances for the best model under state-wise grouped validation.}
+    \label{fig:grouped_model_feature_importance}
+\end{figure}
+
+Figure~\ref{fig:grouped_predicted_vs_actual} shows predicted versus actual log-transformed wildfire EAL under grouped validation. This diagnostic figure helps illustrate the additional difficulty of predicting held-out states, while still showing that the model retains meaningful predictive structure.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.65\textwidth]{figures/notebook6/figure_3_grouped_validation_predicted_vs_actual.pdf}
+    \caption{Predicted versus actual log-transformed wildfire EAL under grouped validation.}
+    \label{fig:grouped_predicted_vs_actual}
+\end{figure}
+
+\section{County-Level Risk Assessment Output}
+\label{sec:pipeline_output}
+
+The complete pipeline produces a county-level wildfire risk-assessment output rather than only a model-performance score. After the input data are cleaned and merged, each county is represented by a feature vector containing exposure, value, vulnerability, resilience, topographic, land-cover, and climate predictors. The trained model then predicts log-transformed wildfire EAL for each county. These predictions can be converted back into monetary units using the inverse logarithmic transformation:
+
+\begin{equation}
+\widehat{\mathrm{wildfire\_eal}} = \exp(\hat{y}) - 1.
+\end{equation}
+
+After model evaluation, the final Random Forest pipeline was refit on the complete cleaned combined dataset in order to generate county-level wildfire risk-assessment outputs. This final step is not a separate validation experiment; rather, it represents the operational use of the trained pipeline after the model-selection and validation stages. The resulting predicted EAL values can be used to rank counties, identify high-risk areas, assign percentile-based risk categories, and compare observed and predicted wildfire losses.
+
+Table~\ref{tab:top25_predicted_wildfire_risk_counties} presents the final county-level risk-assessment output from the complete pipeline. The table ranks counties according to predicted wildfire Expected Annual Loss and assigns percentile-based risk categories. This demonstrates that the proposed workflow produces an interpretable wildfire-risk assessment output in monetary units, rather than only reporting model-performance scores.
+
+% THIS TABLE GENRATED USING LATEX BELOW
+%\begin{table}[htbp]
+    %\centering
+    %\safetablepdf[width=\textwidth]{tables/notebook6/table_7_top25_predicted_wildfire_risk_counties.pdf}
+    %\caption{Top 25 counties by predicted wildfire Expected Annual Loss from the final county-level risk-assessment pipeline.}
+    %\label{tab:top25_predicted_wildfire_risk_counties}
+%\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Top 25 counties by predicted wildfire Expected Annual Loss from the final county-level risk-assessment pipeline.}
+\label{tab:top25_predicted_wildfire_risk_counties}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lllrrrrl}
+\toprule
+State & County & County FIPS & Observed wildfire EAL & Predicted wildfire EAL & Predicted risk percentile & Predicted risk category \\
+\midrule
+California & Riverside & \texttt{06065} & 346,642,805 & 146,874,987 & 100.0000 & Very High \\
+California & San Diego & \texttt{06073} & 430,155,987 & 127,406,725 & 99.9683 & Very High \\
+California & Los Angeles & \texttt{06037} & 155,191,812 & 123,291,040 & 99.9366 & Very High \\
+California & San Bernardino & \texttt{06071} & 145,737,649 & 75,324,177 & 99.9049 & Very High \\
+California & Orange & \texttt{06059} & 57,585,624 & 73,917,750 & 99.8732 & Very High \\
+Nevada & Clark & \texttt{32003} & 24,456,604 & 41,937,132 & 99.8415 & Very High \\
+Arizona & Maricopa & \texttt{04013} & 42,188,453 & 38,969,217 & 99.8098 & Very High \\
+California & Ventura & \texttt{06111} & 50,107,804 & 38,907,335 & 99.7781 & Very High \\
+California & Kern & \texttt{06029} & 38,483,037 & 36,200,689 & 99.7464 & Very High \\
+California & El Dorado & \texttt{06017} & 55,205,076 & 34,812,071 & 99.7146 & Very High \\
+California & Shasta & \texttt{06089} & 35,386,458 & 27,840,399 & 99.6829 & Very High \\
+Colorado & Jefferson & \texttt{08059} & 48,732,848 & 27,386,437 & 99.6512 & Very High \\
+Utah & Washington & \texttt{49053} & 67,561,249 & 26,959,787 & 99.6195 & Very High \\
+Nevada & Washoe & \texttt{32031} & 26,514,858 & 24,483,974 & 99.5878 & Very High \\
+Utah & Utah & \texttt{49049} & 35,012,802 & 24,338,860 & 99.5561 & Very High \\
+California & Placer & \texttt{06061} & 25,175,654 & 24,061,520 & 99.5244 & Very High \\
+Arizona & Pima & \texttt{04019} & 37,561,739 & 23,622,923 & 99.4927 & Very High \\
+Oregon & Jackson & \texttt{41029} & 25,011,497 & 22,517,245 & 99.4610 & Very High \\
+Utah & Salt Lake & \texttt{49035} & 25,182,533 & 21,831,022 & 99.4293 & Very High \\
+California & Calaveras & \texttt{06009} & 30,138,704 & 21,459,704 & 99.3976 & Very High \\
+Colorado & Douglas & \texttt{08035} & 25,736,383 & 20,727,496 & 99.3659 & Very High \\
+Arizona & Yavapai & \texttt{04025} & 28,707,460 & 20,548,261 & 99.3342 & Very High \\
+Arizona & Coconino & \texttt{04005} & 28,503,633 & 19,925,838 & 99.3025 & Very High \\
+California & Santa Barbara & \texttt{06083} & 23,974,974 & 19,512,610 & 99.2708 & Very High \\
+California & Tuolumne & \texttt{06109} & 27,257,984 & 19,385,286 & 99.2391 & Very High \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+The table should be interpreted as the final assessment product of the FEMA/NRI-based modeling workflow. Counties with the highest predicted wildfire EAL represent locations where the combined exposure, vulnerability, resilience, terrain, land-cover, and climate predictors indicate the greatest expected wildfire-loss burden. The percentile-based risk categories provide a simple way to translate continuous monetary predictions into interpretable risk classes.
+
+This output is important for the thesis because it shows that the proposed approach is not limited to wildfire occurrence prediction. Instead, it produces a consequence-oriented risk estimate in monetary units. The pipeline therefore connects the literature gap identified in Chapter~\ref{chap:litreview} with the experimental results presented in this chapter: wildfire hazard-related environmental information is combined with exposure and vulnerability indicators to estimate expected wildfire losses.
+
+\section{Exploratory Ecological Risk Proxy}
+\label{sec:ecological_proxy}
+
+The main FEMA/NRI model predicts monetary wildfire Expected Annual Loss, but the thesis title and literature review also emphasize ecological wildfire consequences. To connect the empirical pipeline with this ecological dimension, an exploratory ecological risk proxy was constructed using the environmental predictors already available in the county-level dataset. This analysis does not estimate ecological loss directly. Instead, it identifies counties where high predicted wildfire risk overlaps with high natural vegetation exposure.
+
+Table~\ref{tab:ecological_proxy_definition} summarizes the proxy construction logic. Natural vegetation exposure is represented by the combined share of forest, shrub, and grass land cover. This value is then multiplied by the predicted wildfire-risk percentile from the final FEMA/NRI model to create an ecological risk proxy. Higher values indicate counties where predicted wildfire risk and natural vegetation exposure are both high.
+
+%This was generated using LAtex code
+%\begin{table}[htbp]
+    %\centering
+    %\safetablepdf[width=0.9\textwidth]{tables/notebook7/table_1_ecological_proxy_definition.pdf}
+    %\caption{Definition of the exploratory ecological risk proxy.}
+    %\label{tab:ecological_proxy_definition}
+%\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Definition of the exploratory ecological risk proxy.}
+\label{tab:ecological_proxy_definition}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.4cm} L{5.7cm} X}
+\toprule
+Component & Definition & Interpretation \\
+\midrule
+Forest fraction & County fraction covered by forest land cover & Natural vegetation exposure \\
+Shrub fraction & County fraction covered by shrub land cover & Natural vegetation exposure \\
+Grass fraction & County fraction covered by grass land cover & Natural vegetation exposure \\
+Natural vegetation fraction & Forest fraction + shrub fraction + grass fraction & Approximate natural ecosystem exposure at county level \\
+Predicted risk percentile & Percentile rank of predicted wildfire EAL & Economic wildfire risk signal from the final FEMA/NRI model \\
+Ecological risk proxy & Predicted risk percentile multiplied by natural vegetation fraction & Overlap of predicted wildfire risk and natural vegetation exposure \\
+Ecological risk category & Percentile-based category of ecological risk proxy & Screening class for exploratory ecological wildfire-risk assessment \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Figure~\ref{fig:predicted_eal_vs_natural_vegetation} shows the relationship between predicted wildfire EAL and natural vegetation fraction. The figure helps distinguish counties with high monetary wildfire risk from counties where wildfire risk overlaps with larger natural vegetation exposure. Figure~\ref{fig:ecological_risk_proxy_distribution} shows the distribution of the ecological risk proxy across counties.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.82\textwidth]{figures/notebook7/figure_1_predicted_eal_vs_natural_vegetation.pdf}
+    \caption{Relationship between predicted wildfire Expected Annual Loss and natural vegetation fraction.}
+    \label{fig:predicted_eal_vs_natural_vegetation}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.82\textwidth]{figures/notebook7/figure_2_ecological_risk_proxy_distribution.pdf}
+    \caption{Distribution of the exploratory ecological risk proxy across counties.}
+    \label{fig:ecological_risk_proxy_distribution}
+\end{figure}
+
+Table~\ref{tab:top25_ecological_risk_proxy_counties} presents the counties with the highest ecological risk proxy values. These counties should not be interpreted as having measured ecological losses. Rather, they represent locations where the model predicts high wildfire-loss risk and where natural vegetation exposure is also high, making them useful candidates for further ecological vulnerability or recovery analysis. The natural vegetation fraction is computed as the sum of forest, shrub, and grass land-cover fractions, as defined in Table~\ref{tab:ecological_proxy_definition}; supporting component values for the top ecological-risk counties are provided in Appendix Table~\ref{tab:app_n7_ecological_component_values}.
+
+% This table generated through latex
+%\begin{table}[htbp]
+    %\centering
+    %\safetablepdf[width=\textwidth]{tables/notebook7/table_2_top25_ecological_risk_proxy_counties.pdf}
+    %\caption{Top 25 counties by exploratory ecological risk proxy.}
+    %\label{tab:top25_ecological_risk_proxy_counties}
+%\end{table}
+
+\begin{longtable}{p{1.8cm} p{1.9cm} c r r r r}
+\caption{Top 25 counties by exploratory ecological risk proxy. All listed counties fall in the Very High ecological risk category.}
+\label{tab:top25_ecological_risk_proxy_counties}\\
+
+\toprule
+State & County & FIPS &
+\shortstack{Natural\\vegetation\\fraction} &
+\shortstack{Predicted\\wildfire EAL} &
+\shortstack{Predicted\\risk\\percentile} &
+\shortstack{Ecological\\risk proxy} \\
+\midrule
+\endfirsthead
+
+\multicolumn{7}{c}{\tablename~\thetable{} -- continued from previous page} \\
+\toprule
+State & County & FIPS &
+\shortstack{Natural\\vegetation\\fraction} &
+\shortstack{Predicted\\wildfire EAL} &
+\shortstack{Predicted\\risk\\percentile} &
+\shortstack{Ecological\\risk proxy} \\
+\midrule
+\endhead
+
+\midrule
+\multicolumn{7}{r}{Continued on next page} \\
+\endfoot
+
+\bottomrule
+\endlastfoot
+
+New Mexico & Lincoln & \texttt{35027} & 0.9904 & 7,664,865 & 97.98 & 97.04 \\
+Arizona & Yavapai & \texttt{04025} & 0.9765 & 20,276,267 & 99.37 & 97.04 \\
+Nevada & Elko & \texttt{32007} & 0.9715 & 15,797,063 & 99.05 & 96.23 \\
+Arizona & Coconino & \texttt{04005} & 0.9690 & 20,168,753 & 99.30 & 96.22 \\
+Arizona & Navajo & \texttt{04017} & 0.9762 & 9,334,416 & 98.29 & 95.96 \\
+New Mexico & Grant & \texttt{35017} & 0.9820 & 5,393,697 & 97.47 & 95.71 \\
+Arizona & Gila & \texttt{04007} & 0.9774 & 7,569,287 & 97.91 & 95.70 \\
+New Mexico & San Miguel & \texttt{35047} & 0.9853 & 3,982,625 & 96.93 & 95.51 \\
+Utah & Washington & \texttt{49053} & 0.9556 & 28,360,770 & 99.68 & 95.26 \\
+Idaho & Boise & \texttt{16015} & 0.9837 & 3,620,263 & 96.68 & 95.11 \\
+California & Mariposa & \texttt{06043} & 0.9712 & 6,893,095 & 97.82 & 95.00 \\
+Arizona & Apache & \texttt{04001} & 0.9792 & 3,428,775 & 96.59 & 94.58 \\
+Arizona & Mohave & \texttt{04015} & 0.9584 & 11,952,896 & 98.58 & 94.48 \\
+Arizona & Santa Cruz & \texttt{04023} & 0.9672 & 5,884,929 & 97.63 & 94.43 \\
+Idaho & Idaho & \texttt{16049} & 0.9602 & 8,220,216 & 98.17 & 94.26 \\
+New Mexico & Otero & \texttt{35035} & 0.9568 & 11,682,361 & 98.51 & 94.25 \\
+New Mexico & Catron & \texttt{35003} & 0.9943 & 1,942,928 & 94.63 & 94.08 \\
+New Mexico & Colfax & \texttt{35007} & 0.9711 & 3,727,119 & 96.81 & 94.01 \\
+Montana & Ravalli & \texttt{30081} & 0.9578 & 7,982,301 & 98.07 & 93.94 \\
+New Mexico & Sandoval & \texttt{35043} & 0.9645 & 4,516,141 & 97.19 & 93.74 \\
+Idaho & Adams & \texttt{16003} & 0.9789 & 2,632,951 & 95.54 & 93.53 \\
+California & Calaveras & \texttt{06009} & 0.9400 & 21,267,869 & 99.43 & 93.47 \\
+Oregon & Jackson & \texttt{41029} & 0.9394 & 21,874,514 & 99.46 & 93.44 \\
+Utah & Iron & \texttt{49021} & 0.9503 & 9,140,679 & 98.26 & 93.38 \\
+Arizona & Pima & \texttt{04019} & 0.9382 & 23,527,659 & 99.49 & 93.35 \\
+
+\end{longtable}
+
+
+
+Figure~\ref{fig:economic_ecological_risk_quadrants_notebook7} provides an additional visualization of the relationship between predicted economic wildfire risk and natural vegetation exposure. This supports the interpretation that monetary risk and ecological exposure are related but not identical dimensions of wildfire consequence assessment.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.82\textwidth]{figures/notebook7/figure_3_economic_vs_ecological_risk_quadrants.pdf}
+    \caption{Economic wildfire-risk percentile and natural vegetation exposure used to motivate ecological risk screening.}
+    \label{fig:economic_ecological_risk_quadrants_notebook7}
+\end{figure}
+
+\section{Economic-Ecological Risk Overlap Analysis}
+\label{sec:economic_ecological_overlap}
+
+The ecological proxy analysis was extended by grouping counties according to the overlap between predicted monetary wildfire risk and natural vegetation exposure. This step provides a simple way to separate counties where both dimensions are high from counties where only monetary risk or ecological exposure is high. The analysis is exploratory, but it helps clarify how the FEMA/NRI monetary-risk model can be connected to ecological screening without claiming to directly estimate ecological damage.
+
+Table~\ref{tab:economic_ecological_quadrant_summary} summarizes the four economic--ecological overlap groups. Counties in the high economic risk and high ecological exposure group are especially important because they combine high predicted wildfire-loss risk with high natural vegetation exposure. Counties with lower economic risk but high ecological exposure may also deserve ecological monitoring, even if their predicted monetary losses are lower.
+
+% This also generated through latex
+%\begin{table}[htbp]
+    %\centering
+    %\safetablepdf[width=\textwidth]{tables/notebook8/table_1_economic_ecological_quadrant_summary.pdf}
+    %\caption{Economic--ecological risk-overlap quadrant summary.}
+    %\label{tab:economic_ecological_quadrant_summary}
+%\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Economic--ecological risk-overlap quadrant summary.}
+\label{tab:economic_ecological_quadrant_summary}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrr}
+\toprule
+Risk-overlap quadrant & County count & Mean observed wildfire EAL & Mean predicted wildfire EAL & Mean predicted risk percentile & Mean natural vegetation fraction & Mean ecological risk proxy \\
+\midrule
+High economic risk + high ecological exposure & 238 & 5,315,258 & 3,466,650 & 91.37 & 0.94 & 85.62 \\
+High economic risk + lower ecological exposure & 395 & 6,047,578 & 3,719,458 & 89.19 & 0.55 & 49.63 \\
+Lower economic risk + high ecological exposure & 395 & 88,208 & 66,091 & 44.94 & 0.92 & 41.48 \\
+Lower economic risk + lower ecological exposure & 2,135 & 59,641 & 49,950 & 39.10 & 0.46 & 19.47 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Figure~\ref{fig:economic_ecological_quadrant_scatter} visualizes the same overlap logic. The scatter plot separates counties by predicted wildfire-risk percentile and natural vegetation fraction, highlighting the counties where economic risk and ecological exposure coincide.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=0.82\textwidth]{figures/notebook8/figure_1_economic_ecological_quadrant_scatter.pdf}
+    \caption{Economic--ecological overlap between predicted wildfire-risk percentile and natural vegetation exposure.}
+    \label{fig:economic_ecological_quadrant_scatter}
+\end{figure}
+
+Table~\ref{tab:high_economic_high_ecological_counties} lists the top counties in the high economic risk and high ecological exposure group. This table provides a practical screening output for identifying counties where further ecological vulnerability analysis, burn-severity assessment, biodiversity exposure mapping, or recovery monitoring may be especially relevant.
+
+%This was also generated with LATEX
+%\begin{table}[htbp]
+    %\centering
+    %\safetablepdf[width=\textwidth]{tables/notebook8/table_2_high_economic_high_ecological_counties.pdf}
+    %\caption{Top counties with high predicted economic wildfire risk and high natural vegetation exposure.}
+    %\label{tab:high_economic_high_ecological_counties}
+%\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Top counties with high predicted economic wildfire risk and high natural vegetation exposure.}
+\label{tab:high_economic_high_ecological_counties}
+\tiny
+\setlength{\tabcolsep}{2.8pt}
+\renewcommand{\arraystretch}{1.06}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lllrrrrr}
+\toprule
+State & County & County FIPS & Predicted wildfire EAL & Predicted risk percentile & Natural vegetation fraction & Ecological risk proxy & Ecological risk percentile \\
+\midrule
+New Mexico & Lincoln & \texttt{35027} & 7,664,865 & 97.98 & 0.99 & 97.04 & 100.00 \\
+Arizona & Yavapai & \texttt{04025} & 20,276,267 & 99.37 & 0.98 & 97.04 & 99.97 \\
+Nevada & Elko & \texttt{32007} & 15,797,063 & 99.05 & 0.97 & 96.23 & 99.94 \\
+Arizona & Coconino & \texttt{04005} & 20,168,753 & 99.30 & 0.97 & 96.22 & 99.91 \\
+Arizona & Navajo & \texttt{04017} & 9,334,416 & 98.29 & 0.98 & 95.96 & 99.87 \\
+New Mexico & Grant & \texttt{35017} & 5,393,697 & 97.47 & 0.98 & 95.71 & 99.84 \\
+Arizona & Gila & \texttt{04007} & 7,569,287 & 97.91 & 0.98 & 95.70 & 99.81 \\
+New Mexico & San Miguel & \texttt{35047} & 3,982,625 & 96.93 & 0.99 & 95.51 & 99.78 \\
+Utah & Washington & \texttt{49053} & 28,360,770 & 99.68 & 0.96 & 95.26 & 99.75 \\
+Idaho & Boise & \texttt{16015} & 3,620,263 & 96.68 & 0.98 & 95.11 & 99.72 \\
+California & Mariposa & \texttt{06043} & 6,893,095 & 97.82 & 0.97 & 95.00 & 99.68 \\
+Arizona & Apache & \texttt{04001} & 3,428,775 & 96.59 & 0.98 & 94.58 & 99.65 \\
+Arizona & Mohave & \texttt{04015} & 11,952,896 & 98.58 & 0.96 & 94.48 & 99.62 \\
+Arizona & Santa Cruz & \texttt{04023} & 5,884,929 & 97.63 & 0.97 & 94.43 & 99.59 \\
+Idaho & Idaho & \texttt{16049} & 8,220,216 & 98.17 & 0.96 & 94.26 & 99.56 \\
+New Mexico & Otero & \texttt{35035} & 11,682,361 & 98.51 & 0.96 & 94.25 & 99.53 \\
+New Mexico & Catron & \texttt{35003} & 1,942,928 & 94.63 & 0.99 & 94.08 & 99.49 \\
+New Mexico & Colfax & \texttt{35007} & 3,727,119 & 96.81 & 0.97 & 94.01 & 99.46 \\
+Montana & Ravalli & \texttt{30081} & 7,982,301 & 98.07 & 0.96 & 93.94 & 99.43 \\
+New Mexico & Sandoval & \texttt{35043} & 4,516,141 & 97.19 & 0.96 & 93.74 & 99.40 \\
+Idaho & Adams & \texttt{16003} & 2,632,951 & 95.54 & 0.98 & 93.53 & 99.37 \\
+California & Calaveras & \texttt{06009} & 21,267,869 & 99.43 & 0.94 & 93.47 & 99.34 \\
+Oregon & Jackson & \texttt{41029} & 21,874,514 & 99.46 & 0.94 & 93.44 & 99.30 \\
+Utah & Iron & \texttt{49021} & 9,140,679 & 98.26 & 0.95 & 93.38 & 99.27 \\
+Arizona & Pima & \texttt{04019} & 23,527,659 & 99.49 & 0.94 & 93.35 & 99.24 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\section{Supporting Results from the Vietnam Wildfire Prediction Study}
+\label{sec:vietnam_results}
+
+Although the main empirical pipeline of this thesis focuses on FEMA/NRI county-level wildfire Expected Annual Loss modeling in the United States, a previous supporting study was also conducted for An Giang Province, Vietnam. This study is included here to demonstrate earlier fine-scale wildfire prediction work and to connect the present loss-assessment pipeline with the author's prior experience in deep-learning-based wildfire risk modeling.
+
+The Vietnam study developed an enhanced deep neural network for classifying significant wildfire events in An Giang Province. The model used multi-source environmental inputs, including vegetation indices, land-use/land-cover information, MERRA-2 weather variables, and dynamic fire-growth metrics. The binary target was based on significant fire events, with a burned-area threshold of 0.6~km$^2$. The model also used class weighting, threshold optimization, and SHAP-based interpretation to improve operational usefulness and explainability \citep{suliman2026angiang}.
+
+Table~\ref{tab:vietnam_study_results} summarizes the key performance results from the Vietnam study. The enhanced DNN achieved 91.4\% overall accuracy, 74.8\% recall for significant fires, 92.5\% precision, 82.7\% F1-score, 97.7\% specificity, and a 2.3\% false-positive rate. These results indicate that the model achieved a useful balance between detecting significant fires and limiting false alarms.
+
+\begin{table}[htbp]
+\centering
+\caption{Key results from the supporting An Giang, Vietnam wildfire prediction study.}
+\label{tab:vietnam_study_results}
+\begin{tabular}{lc}
+\toprule
+Metric & Value \\
+\midrule
+Overall accuracy & 91.4\% \\
+Significant fire recall & 74.8\% \\
+Significant fire precision & 92.5\% \\
+F1-score & 82.7\% \\
+Specificity & 97.7\% \\
+False positive rate & 2.3\% \\
+False negative rate & 25.2\% \\
+Dominant SHAP feature & Fire spread rate \\
+Fire spread rate importance & 37.6\% \\
+Optimal decision threshold & 0.65 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Vietnam results are not treated as part of the FEMA/NRI county-level loss model because they address a different task: significant-fire classification rather than monetary Expected Annual Loss prediction. Nevertheless, they are relevant to the thesis because they show how wildfire risk modeling can be improved using dynamic fire-growth features, multi-source environmental data, threshold-sensitive evaluation, and model interpretability. In this sense, the Vietnam study provides a fine-scale prediction-oriented complement to the main FEMA/NRI loss-assessment pipeline.
+
+\section{Summary of Current Results}
+
+Table~\ref{tab:prelim_results_summary} summarizes the current main experiments. The table condenses the main result of the chapter: the county-only baseline provides a meaningful starting point, environmental variables substantially improve predictive performance, and the combined model remains the strongest setup even under state-wise validation.
+
+\begin{table}[htbp]
+\centering
+\caption{Summary of county-level wildfire EAL modeling results.}
+\label{tab:prelim_results_summary}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\hline
+Model setup & Best model & Test $R^2$ & CV / grouped $R^2$ & Notes \\
+\hline
+County-only baseline & Random Forest & 0.483 & 0.504 & Accessible county variables only \\
+Environmental-only (CONUS) & Random Forest & 0.793 & 0.768 & Topography, land cover, climate \\
+Combined baseline + environment (CONUS) & Random Forest & 0.829 & 0.795 & Standard random cross-validation \\
+Combined baseline + environment (state-wise) & Random Forest & 0.806 & 0.602 & Grouped cross-validation by state \\
+\hline
+\end{tabular}%
+}
+\end{table}
+
+Overall, these results support three main conclusions. First, county-level wildfire expected annual loss can be modeled with meaningful predictive power using accessible public datasets. Second, environmental variables contribute much more strongly than county socioeconomic variables alone, especially under geographically stricter validation. Third, the combined model remains reasonably robust even when evaluated across held-out states, which makes it a credible current baseline for the thesis.
+
+\section{Interpretation and Implications}
+
+The experimental results demonstrate that moving from hazard-oriented wildfire modeling to loss-oriented wildfire-risk assessment is feasible using publicly accessible datasets. The FEMA/NRI-based pipeline shows that county-level wildfire Expected Annual Loss can be modeled with meaningful predictive power when exposure, value, vulnerability, resilience, topographic, land-cover, and climate variables are combined in a structured machine-learning workflow. This is important for the thesis because it provides a consequence-oriented wildfire-risk modeling framework in monetary units rather than a model limited only to wildfire occurrence or burned area.
+
+The results also show that environmental predictors substantially improve model performance compared with county-level socioeconomic and exposure variables alone. In the county-only baseline, Random Forest achieved moderate predictive performance, indicating that exposure, value, vulnerability, and resilience variables contain useful but incomplete information. After environmental augmentation, performance increased substantially, and the combined model remained the strongest setup under both random validation and state-wise grouped validation. This supports the central argument of the thesis: wildfire losses are shaped by both the exposed human/economic system and the environmental conditions that influence wildfire hazard.
+
+The state-wise grouped validation results are especially important because they provide a more demanding test of geographic generalization. Although performance declined compared with random splitting, the combined model did not collapse when evaluated across held-out states. This suggests that the pipeline captures a transferable wildfire-risk signal rather than only benefiting from random geographic mixing. At the same time, the reduction in grouped-validation performance shows that regional generalization remains challenging and should be considered when interpreting the model as a decision-support tool.
+
+The final county-level risk-assessment output further strengthens the practical value of the pipeline. By converting predicted log-transformed wildfire EAL back into monetary units and ranking counties by predicted wildfire loss, the model produces an interpretable risk-assessment product. The exploratory ecological proxy and economic--ecological overlap analysis add a screening layer that identifies where high predicted wildfire risk coincides with high natural vegetation exposure. This makes the proposed workflow more useful than a purely technical regression experiment, because the output can support county-level comparison, prioritization, and further investigation of areas with high expected wildfire losses or ecological exposure.
+
+\section{Limitations and Future Work}
+
+Several limitations should be acknowledged. First, the target variable is county-level wildfire Expected Annual Loss from the FEMA National Risk Index. Although this provides a useful and publicly accessible monetary risk target, it is spatially aggregated and does not capture event-level losses, parcel-level exposure, or the detailed mechanisms through which individual wildfire events cause damage. Therefore, the model should be interpreted as a county-level risk-assessment framework rather than an event-level damage prediction system.
+
+Second, the environmental augmentation is restricted to the contiguous United States because the selected land-cover and climate variables were prepared within a CONUS-compatible workflow. This provides a consistent national-scale modeling setup, but it also means that the current environmental feature set does not directly cover non-CONUS areas or all county-equivalent units. A small number of unmatched county-equivalent units were excluded during the environmental merge.
+
+Third, although state-wise grouped validation provides a stronger test than random splitting, geographic transferability remains imperfect. The reduction in performance under grouped validation indicates that wildfire-loss relationships vary across regions due to differences in climate, vegetation, settlement patterns, suppression systems, exposure, and local fire regimes. Future work should therefore explore additional spatial validation designs, regional calibration strategies, and area-of-applicability analysis.
+
+Fourth, the current model uses Random Forest feature importance as an initial interpretation tool. While this is useful for identifying influential predictors, future work could incorporate more detailed explainability methods such as SHAP values to better understand nonlinear interactions among exposure, vulnerability, land cover, topography, and climate variables.
+
+Fifth, the empirical model does not directly predict ecological losses as a separate target variable. The exploratory ecological proxy and economic--ecological overlap analysis provide a screening perspective based on natural vegetation exposure and predicted wildfire risk, but they should not be interpreted as measured ecological damage, burn severity, biodiversity loss, or ecosystem-service loss. Future work should therefore connect this screening layer with explicit ecological vulnerability, recovery, or ecosystem-value datasets.
+
+Future extensions can proceed in several directions. The first direction is methodological refinement, including additional wildfire-relevant predictors, improved spatial validation, uncertainty quantification, and county-level error analysis. The second direction is data enrichment, especially through more detailed event-level loss data, building-level exposure layers, infrastructure data, smoke-health impacts, suppression-cost data, and ecological vulnerability indicators. The third direction is fine-scale modeling, where the exploratory Creek Fire tensor-based workflow described in Appendix~\ref{app:creek_fire_pipeline} could be used as a future extension toward spatially detailed wildfire-risk modeling. Together, these extensions would help move from the current county-level loss-assessment framework toward a more comprehensive multi-scale wildfire-risk and wildfire-loss modeling system.

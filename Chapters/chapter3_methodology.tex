@@ -1,0 +1,319 @@
+\chapter{Methodology}
+\label{chap:methodology}
+
+\section{Overview}
+
+This chapter describes the methodology used to construct and evaluate the county-level wildfire-loss modeling pipeline. The goal of the methodology is to move from a hazard-oriented framing of wildfire prediction toward a loss-oriented setup in which the target variable is county-level wildfire expected annual loss (EAL). The workflow combines publicly accessible tabular data, geospatial environmental predictors, and machine-learning regression models.
+
+The methodology was implemented in a sequence of stages. First, a cleaned county-level wildfire-loss target table was constructed from the FEMA National Risk Index (NRI), which provides standardized natural-hazard risk indicators including expected annual loss, social vulnerability, and community resilience \citep{fema2025nri_technical,fema2025nri_methodology}. Second, a baseline predictor dataset was built using county-level demographic, exposure, and resilience variables. Third, the baseline was extended with wildfire-relevant environmental predictors derived from public geospatial datasets. Fourth, several regression models were evaluated under both conventional random train/test splits and stricter state-wise grouped validation.
+
+\section{Study Design}
+
+The current experimental design is county-based. Each observation corresponds to one county or county-equivalent unit, and the objective is to predict wildfire expected annual loss in monetary units. This design was chosen for three reasons. First, county-level data are broadly accessible and allow reproducible modeling at national scale. Second, county-level units make it possible to merge monetary loss targets with exposure, vulnerability, and environmental predictors. Third, the county scale provides a practical intermediate level between highly aggregated state analysis and much more detailed event-level or parcel-level loss modeling.
+
+
+It is important to clarify the empirical scope of the methodology. The implemented modeling pipeline focuses on monetary wildfire Expected Annual Loss as the prediction target. Ecological losses are not directly modeled as a separate dependent variable because the current FEMA NRI-based dataset does not provide a county-level ecological-loss target comparable to monetary EAL. However, ecological context is partially represented through environmental predictors such as land-cover fractions, elevation, slope, precipitation, wind speed, and vapor pressure deficit. These variables help characterize wildfire hazard conditions, but they should not be interpreted as direct ecological-loss measurements.
+
+The present modeling design should be viewed as a county-level loss-assessment framework rather than an event-level or asset-level damage model. It is intended to test whether wildfire expected annual loss can be explained to a meaningful extent with accessible public data and whether environmental predictors improve performance beyond purely county-level socioeconomic variables.
+
+\section{Complete Pipeline for Wildfire Risk Prediction and Assessment}
+\label{sec:complete_pipeline}
+
+The proposed methodology is designed as an end-to-end pipeline for county-level wildfire risk prediction and assessment. The purpose of the pipeline is not only to train a regression model, but to convert heterogeneous public datasets into a structured wildfire-risk assessment output in monetary units. The complete workflow connects data acquisition, target construction, feature engineering, environmental augmentation, model training, validation, prediction, and risk assessment.
+
+The pipeline begins with public county-level risk data from the FEMA National Risk Index. From this source, wildfire Expected Annual Loss (EAL) is extracted as the main target variable. This target is suitable for the thesis because it represents wildfire risk in monetary units rather than only fire occurrence or burned area. The raw wildfire EAL values are cleaned, standardized by county FIPS identifiers, and transformed using a logarithmic transformation to reduce skewness.
+
+The second stage constructs the baseline county-level predictor table. This includes demographic, exposure, value, vulnerability, and resilience-related variables such as population, building value, agriculture value, county area, social vulnerability, and community resilience. Derived density-style variables are then created in order to represent value concentration and exposure intensity at county level.
+
+The third stage adds environmental predictors. Since wildfire losses depend not only on exposed assets but also on environmental conditions that influence wildfire occurrence and severity, the baseline table is augmented with topographic, land-cover, and climate variables. These include elevation, slope, forest fraction, shrub fraction, grass fraction, developed-land fraction, warm-season maximum temperature, precipitation, wind speed, and vapor pressure deficit. These predictors represent key components of the wildfire hazard environment.
+
+The fourth stage trains machine-learning regression models to predict the transformed wildfire EAL target. Linear Regression and Ridge Regression are used as simple baseline models, while Random Forest and Gradient Boosting are used to capture nonlinear relationships among exposure, vulnerability, resilience, and environmental variables. The best-performing model is then used as the main predictive component of the pipeline.
+
+The fifth stage evaluates the model using both random and geographically stricter validation strategies. Random train/test splitting and standard cross-validation provide an initial performance benchmark. State-wise grouped validation is then used to test whether the model can generalize across geographic regions. This is important because a wildfire-risk model should not only interpolate among nearby counties but should also retain predictive value when applied to held-out states.
+
+The final stage converts model predictions into risk-assessment outputs. The model predicts log-transformed wildfire EAL, which can be converted back into monetary units using the inverse transformation:
+
+\begin{equation}
+\widehat{\mathrm{wildfire\_eal}} = \exp(\hat{y}) - 1.
+\end{equation}
+
+These predicted EAL values can then be used to rank counties, compare observed and predicted losses, identify counties with high expected wildfire losses, and support broader risk interpretation. In this sense, the pipeline produces not only a predictive model but also a structured risk-assessment framework.
+
+Overall, the complete pipeline can be summarized as:
+\[
+\begin{aligned}
+&\text{Public data sources}
+\rightarrow
+\text{cleaned county table}
+\rightarrow
+\text{baseline predictors} \\
+&\rightarrow
+\text{environmental augmentation}
+\rightarrow
+\text{ML regression model} \\
+&\rightarrow
+\text{geographic validation}
+\rightarrow
+\text{wildfire risk assessment output}.
+\end{aligned}
+\]
+
+Figure~\ref{fig:fema_nri_risk_pipeline} summarizes the complete FEMA/NRI-based workflow used in this thesis. The diagram shows how public risk, exposure, vulnerability, resilience, topographic, land-cover, and climate datasets are transformed into predicted wildfire EAL and county-level risk-assessment outputs.
+
+\begin{figure}[htbp]
+    \centering
+    \safefigure[width=\textwidth]{figures/pipelines/wildfire_loss_assessment_workflow_diagram.pdf}
+    \caption{Complete FEMA/NRI-based pipeline for county-level wildfire risk prediction and assessment. The workflow transforms public risk, exposure, vulnerability, resilience, topographic, land-cover, and climate data into predicted wildfire Expected Annual Loss and risk-assessment outputs.}
+    \label{fig:fema_nri_risk_pipeline}
+\end{figure}
+
+Before the current county-level FEMA NRI pipeline was developed, an exploratory fine-scale Creek Fire data-engineering workflow was prepared as a baseline approach for wildfire tensor construction. Since the final thesis direction focuses on wildfire risk/loss assessment in monetary units, the Creek Fire workflow is included in Appendix~\ref{app:creek_fire_pipeline} as supporting preliminary work rather than as the main experimental pipeline.
+
+\section{Target Variable Construction}
+
+\subsection{Wildfire Expected Annual Loss}
+
+The main target variable is county-level wildfire expected annual loss, denoted as \texttt{wildfire\_eal}. This variable was extracted from the FEMA National Risk Index county table. The NRI was selected because it provides a publicly accessible consequence-oriented target for large-scale modeling and is structured around expected annual loss, social vulnerability, and community resilience \citep{fema2025nri_technical,fema2025nri_methodology}. This makes it suitable for a scalable experiment in loss-oriented wildfire-risk modeling.
+
+It is important to clarify that FEMA NRI wildfire EAL is not a raw record of observed wildfire damages from individual fire events. It is a modeled expected-loss indicator that reflects the combination of hazard frequency, exposure, and expected consequence. Therefore, the present thesis does not predict individual wildfire-event damages directly. Instead, it learns county-level relationships between publicly available exposure, vulnerability, resilience, environmental predictors, and the FEMA NRI wildfire EAL target. This framing makes the target suitable for county-level risk assessment, but it also means that the results should be interpreted as expected-loss modeling rather than event-level damage reconstruction.
+
+The raw target distribution is strongly right-skewed, with many counties having relatively low wildfire EAL values and a smaller number of counties having substantially larger losses. To stabilize the regression problem, the target was transformed using
+\begin{equation}
+y = \log(1 + \texttt{wildfire\_eal}).
+\end{equation}
+This transformed target, denoted as \texttt{log\_wildfire\_eal}, was used in all machine-learning experiments.
+
+\subsection{Initial Cleaning}
+
+The original county-level table contained 3232 geographic units. Rows with missing wildfire target values were removed, producing a cleaned target dataset with 3144 rows. County identifiers were standardized using 5-digit FIPS codes in string format in order to ensure consistent merging across all later datasets.
+
+Table~\ref{tab:nri_target_construction_summary_export} summarizes the target construction process. It reports the original number of FEMA NRI county records, the number of rows removed because of missing wildfire EAL values, and the final number of counties retained for modeling.
+
+\begin{table}[htbp]
+    \centering
+    \safetablepdf[width=0.9\textwidth]{tables/notebook1/table_1_target_construction_summary.pdf}
+    \caption{Target construction summary from the FEMA NRI county-level wildfire EAL table.}
+    \label{tab:nri_target_construction_summary_export}
+\end{table}
+
+\section{Baseline County-Level Predictors}
+
+The first predictor set was designed as a county-level baseline using accessible variables already present in the county table. These variables were selected to represent exposure, value, vulnerability, resilience, and spatial scale.
+
+Table~\ref{tab:selected_baseline_predictors_export} lists the selected raw FEMA/NRI fields, their corresponding model variable names, their role in the thesis, and the reason for including each variable. The selected baseline predictors include population, building value, agriculture value, county area, social vulnerability score, and community resilience score.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Selected baseline county-level predictors used to represent exposure, value, vulnerability, and resilience.}
+    \label{tab:selected_baseline_predictors_export}
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.3cm} >{\raggedright\arraybackslash}p{3.0cm} >{\raggedright\arraybackslash}p{2.6cm} X}
+    \toprule
+    Raw FEMA/NRI field & Model variable & Role in thesis & Reason for inclusion \\
+    \midrule
+    \texttt{POPULATION} & \texttt{population} & Population exposure & Represents exposed population at county level. \\
+    \texttt{BUILDVALUE} & \texttt{building\_value} & Building exposure / asset value & Represents built-environment value exposed to wildfire risk. \\
+    \texttt{AGRIVALUE} & \texttt{agriculture\_value} & Agricultural exposure / asset value & Represents agricultural value exposed to wildfire risk. \\
+    \texttt{AREA} & \texttt{area\_sq\_mi} & County spatial scale & Controls for county size and spatial scale. \\
+    \texttt{SOVI\_SCORE} & \texttt{social\_vulnerability\_
+    score} & Social vulnerability & Captures the social vulnerability component of risk. \\
+    
+    \texttt{RESL\_SCORE} & \texttt{community\_
+    resilience\_score} & Community resilience & Captures community capacity and resilience. \\
+    \bottomrule
+    \end{tabularx}
+\end{table}
+
+In addition to these direct variables, several derived features were constructed:
+\begin{itemize}
+    \item population density,
+    \item building value density,
+    \item agriculture value density,
+    \item building value per capita.
+\end{itemize}
+
+Table~\ref{tab:derived_baseline_features_export} summarizes these derived variables, their formulas, and their interpretation. These derived features provide an interpretable approximation of exposure intensity and value concentration, which are important for loss-oriented wildfire modeling.
+
+\begin{table}[htbp]
+    \centering
+    \safetablepdf[width=\textwidth]{tables/notebook2/table_2_derived_baseline_features.pdf}
+    \caption{Derived baseline features used to represent exposure intensity and value concentration.}
+    \label{tab:derived_baseline_features_export}
+\end{table}
+
+After merging the target and baseline predictors, leakage-prone wildfire-specific risk fields were removed from the modeling table. The excluded fields were:
+
+\begin{itemize}
+    \setlength{\itemsep}{0pt}
+    \item \texttt{wildfire\_risk\_score}
+    \item \texttt{wildfire\_risk\_rating}
+    \item \texttt{wildfire\_eal\_score\_like}
+    \item \texttt{wildfire\_eal\_rating\_like}
+    \item \texttt{wildfire\_risk\_value}
+    \item \texttt{wildfire\_eal\_buildings}
+    \item \texttt{wildfire\_eal\_population}
+    \item \texttt{wildfire\_eal\_agriculture}
+    \item \texttt{wildfire\_annual\_frequency}
+\end{itemize}
+
+These variables were excluded because they are directly derived from, or closely related to, the FEMA wildfire-risk calculation. Keeping them would allow the model to learn from fields that already encode wildfire-specific risk or loss information, making the prediction task artificially easier. Table~\ref{tab:final_baseline_dataset_summary_export} reports the final non-leaky baseline modeling dataset summary after target--predictor merging.
+
+\begin{table}[htbp]
+    \centering
+    \safetablepdf[width=0.85\textwidth]{tables/notebook2/table_3_final_baseline_dataset_summary.pdf}
+    \caption{Summary of the final non-leaky baseline modeling dataset after target--predictor merging.}
+    \label{tab:final_baseline_dataset_summary_export}
+\end{table}
+
+\section{Environmental Augmentation}
+
+\subsection{Motivation}
+
+The baseline county variables describe exposure and resilience, but they do not fully capture wildfire-relevant environmental conditions. Since wildfire activity and its consequences depend strongly on terrain, fuels, vegetation structure, climate, atmospheric dryness, soil moisture, and wind, the next stage of the methodology added environmental predictors derived from public geospatial datasets. This step was also motivated by wildfire-climate and fire-environment literature showing the importance of variables such as vapor pressure deficit, precipitation, fuel aridity, soil moisture, plant water stress, wind, and drought conditions for wildfire activity and spread \citep{abatzoglou2016anthropogenic,williams2019observed,holden2025soilmoisture,beltranmarcos2026drivers}.
+
+\subsection{Spatial Scope}
+
+Environmental augmentation was initially performed for the contiguous United States (CONUS). This restriction was introduced because the selected climate and land-cover datasets were directly compatible with a CONUS-focused workflow. The resulting environmental merge excluded a small number of unmatched Connecticut county-equivalent units, which were documented separately.
+
+\subsection{Environmental Data Sources}
+
+Environmental predictors were derived from the following public datasets:
+\begin{itemize}
+    \item topography from SRTM,
+    \item county geometries from TIGER counties,
+    \item land cover from the 2019 NLCD release,
+    \item warm-season climate summaries from gridMET.
+\end{itemize}
+
+Warm-season climate variables were derived from gridMET, a gridded surface meteorological dataset developed for ecological and environmental modeling \citep{abatzoglou2013gridmet}. Land-cover predictors were derived from the National Land Cover Database (NLCD), which provides Landsat-based land-cover products at 30 m spatial resolution \citep{dewitz2021nlcd}.
+
+The selected environmental variables were:
+\begin{itemize}
+    \item mean elevation,
+    \item mean slope,
+    \item forest fraction,
+    \item shrub fraction,
+    \item grass fraction,
+    \item developed-land fraction,
+    \item warm-season mean maximum temperature,
+    \item warm-season mean precipitation,
+    \item warm-season mean wind speed,
+    \item warm-season mean vapor pressure deficit.
+\end{itemize}
+
+Table~\ref{tab:environmental_predictor_definitions_export} defines the environmental predictors used for the CONUS county-level wildfire EAL modeling. These predictors were chosen because they describe key environmental controls relevant to wildfire hazard and consequence patterns, including terrain, vegetation composition, moisture availability, atmospheric dryness, and wind.
+
+% THIS IS MADE THROUGH LATEX
+%\begin{table}[htbp]
+    %\centering
+    %\safetablepdf[width=\textwidth]{tables/notebook5/table_2_environmental_predictor_definitions.pdf}
+    %\caption{Environmental predictors used for CONUS county-level wildfire EAL modeling.}
+    %\label{tab:environmental_predictor_definitions_export}
+%\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Environmental predictors used for CONUS county-level wildfire EAL modeling.}
+\label{tab:environmental_predictor_definitions_export}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{2.6cm} L{2.8cm} L{3.9cm} X}
+\toprule
+Predictor & Data source & County-level aggregation & Role in wildfire-risk modeling \\
+\midrule
+\texttt{elevation\_m} & SRTM & Mean over county polygon & Topographic/climatic gradient \\
+\texttt{slope\_deg} & SRTM-derived terrain & Mean over county polygon & Terrain influence on fire behavior \\
+\texttt{forest\_frac} & NLCD 2019 & Mean binary land-cover fraction & Forest fuel context \\
+\texttt{shrub\_frac} & NLCD 2019 & Mean binary land-cover fraction & Shrub fuel context \\
+\texttt{grass\_frac} & NLCD 2019 & Mean binary land-cover fraction & Grass/agricultural fuel context \\
+\texttt{developed\_frac} & NLCD 2019 & Mean binary land-cover fraction & Human/developed-land context \\
+\texttt{warm\_tmmx\_c} & gridMET & Warm-season mean, then county mean & Thermal fire-weather condition \\
+\texttt{warm\_pr\_mm} & gridMET & Warm-season mean, then county mean & Moisture/fuel-availability condition \\
+\texttt{warm\_wind\_ms} & gridMET & Warm-season mean, then county mean & Potential fire-spread/suppression condition \\
+\texttt{warm\_vpd\_kpa} & gridMET & Warm-season mean, then county mean & Atmospheric dryness/fuel-aridity condition \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{County-Level Aggregation}
+
+Environmental layers were aggregated to the county level by spatial reduction over county polygons. For topographic variables such as elevation and slope, county-level mean values were computed. For categorical land-cover information, land-cover classes were converted into fractional predictors such as forest fraction, shrub fraction, grass fraction, and developed-land fraction. For climate variables, warm-season means were computed from daily gridMET observations over a multi-year period and then spatially reduced by county.
+
+NoData or missing raster values were excluded from the aggregation where applicable. The purpose of this step was not to preserve fine-scale pixel variability, but to create consistent county-level environmental predictors that could be merged with the FEMA NRI county-level target using FIPS identifiers. The resulting county-level environmental table was merged with the cleaned county baseline using county FIPS codes.
+
+\subsection{Exploratory Ecological Risk-Screening Layer}
+
+Because the main FEMA/NRI target represents monetary wildfire Expected Annual Loss, the thesis does not directly estimate ecological loss as a separate supervised-learning target. However, an exploratory ecological risk-screening layer was added to connect the monetary risk model with the ecological dimension of wildfire consequences. This layer uses the land-cover fractions already derived during environmental augmentation to represent natural vegetation exposure.
+
+First, a natural vegetation fraction was calculated by combining forest, shrub, and grass fractions. This variable identifies counties where a larger share of the landscape consists of vegetation types that may be ecologically affected by wildfire. Second, the natural vegetation fraction was combined with the predicted wildfire-risk percentile from the final FEMA/NRI model to produce an exploratory ecological risk proxy. The proxy is defined as:
+\[
+\text{Ecological risk proxy} = \text{Natural vegetation fraction} \times \text{Predicted wildfire-risk percentile}.
+\]
+
+This proxy does not represent measured ecological damage, biodiversity loss, burn severity, or ecosystem-service loss. Instead, it identifies counties where high predicted monetary wildfire risk overlaps with high natural vegetation exposure. The proxy therefore provides an ecological screening perspective that complements the main monetary EAL model without changing the primary supervised-learning target.
+
+A second exploratory step classified counties into economic--ecological overlap groups. Counties were categorized according to whether they had high predicted economic wildfire risk and high natural vegetation exposure. This analysis highlights counties where monetary wildfire risk and ecological exposure may coincide, and it separates them from counties where only one of these dimensions is high.
+
+\section{Model Development}
+
+\subsection{Regression Models}
+
+Several regression models were evaluated in the experiments:
+\begin{itemize}
+    \item Linear Regression,
+    \item Ridge Regression,
+    \item Random Forest Regression,
+    \item Gradient Boosting Regression.
+\end{itemize}
+
+The linear models were included as simple baselines, while the tree-based ensemble models were used to capture nonlinear relationships between wildfire EAL and the predictor variables. The experiments showed that Random Forest consistently produced the strongest performance, especially after environmental augmentation.
+
+\subsection{Preprocessing}
+
+The regression pipeline used standard machine-learning preprocessing steps. Numeric predictors were median-imputed when necessary and then standardized before model fitting. Although tree-based models are less sensitive to scaling than linear models, using a consistent preprocessing pipeline allowed direct comparison across multiple algorithms.
+
+\section{Validation Strategy}
+
+\subsection{Random Train/Test Split}
+
+The first validation setup used a conventional random train/test split, with 80\% of observations assigned to training and 20\% assigned to testing. This provided a first estimate of predictive performance under standard machine-learning practice.
+
+\subsection{Cross-Validation}
+
+For baseline benchmarking, 5-fold cross-validation was used to evaluate the stability of the county-only and environmental-augmented models. Performance was summarized through the mean and standard deviation of the fold-wise results.
+
+\subsection{State-Wise Grouped Validation}
+
+Because random splitting can still place geographically similar counties in both training and testing subsets, a stricter geographic validation strategy was also introduced. In this setup, grouped cross-validation by state was used, so that counties from held-out states were not observed during training. This allowed a more realistic test of geographic transferability.
+
+This stricter validation design is motivated by the spatial machine-learning literature, which shows that random validation can overestimate performance when observations are spatially structured or geographically dependent \citep{roberts2017crossvalidation,valavi2019blockcv}. It is also consistent with the broader concern that spatial prediction models may be less reliable when applied outside the environmental conditions represented in the training data \citep{meyer2021aoa}. Recent geospatial validation work further emphasizes that spatially realistic validation strategies are necessary when models are expected to generalize across space rather than only interpolate among nearby observations \citep{wang2023spatialplus}.
+
+\section{Evaluation Metrics}
+
+The main evaluation metrics used in the experiments were:
+\begin{itemize}
+    \item coefficient of determination ($R^2$),
+    \item root mean squared error (RMSE),
+    \item mean absolute error (MAE).
+\end{itemize}
+
+The coefficient of determination was used as the primary metric for model comparison because it provides an interpretable measure of the fraction of variance explained in the transformed wildfire EAL target. RMSE and MAE were also reported in order to quantify average prediction error and sensitivity to larger residuals.
+
+\section{Ablation and Interpretation}
+
+To better understand how the county-level predictors contributed to performance, an ablation analysis was conducted on the baseline Random Forest model. The ablation tested the effect of removing county area, social vulnerability, and community resilience from the feature set. This allowed the experiments to assess whether predictive performance depended mainly on broad spatial scale, or whether vulnerability and resilience variables added meaningful explanatory value.
+
+Feature importance from the Random Forest models was also used for interpretation. This provided an initial indication of which variables contributed most strongly to the predictive signal in both the county-only and combined county-plus-environment settings.
+
+\section{Methodological Summary}
+
+In summary, the methodology combines three components:
+\begin{enumerate}
+    \item a county-level wildfire expected annual loss target in monetary units,
+    \item a baseline set of county exposure, value, and resilience predictors,
+    \item an environmental augmentation layer built from topography, land cover, and climate.
+\end{enumerate}
+
+This methodology was designed to test whether publicly accessible datasets are sufficient to support a meaningful first benchmark for wildfire-loss modeling. The resulting experimental findings are presented in Chapter~\ref{chap:results}.

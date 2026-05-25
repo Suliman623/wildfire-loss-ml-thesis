@@ -1,0 +1,121 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\citation{fema2025nri_technical,fema2025nri_methodology}
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}Experimental Results and Risk Assessment}{42}{chapter.4}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:results}{{4}{42}{Experimental Results and Risk Assessment}{chapter.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Overview}{42}{section.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}Target Variable and Dataset Construction}{43}{section.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces Distribution of FEMA NRI wildfire Expected Annual Loss before and after logarithmic transformation. The raw target is highly right-skewed, while the log-transformed target is more suitable for regression modeling.}}{43}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:eal_raw_log_distribution}{{4.1}{43}{Distribution of FEMA NRI wildfire Expected Annual Loss before and after logarithmic transformation. The raw target is highly right-skewed, while the log-transformed target is more suitable for regression modeling}{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}Baseline County-Level Risk Model}{44}{section.4.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.1}{\ignorespaces Combined test-set and cross-validation performance of the baseline county-level wildfire EAL models.}}{44}{table.caption.14}\protected@file@percent }
+\newlabel{tab:baseline_model_performance_summary_export}{{4.1}{44}{Combined test-set and cross-validation performance of the baseline county-level wildfire EAL models}{table.caption.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces Cross-validation $R^2$ comparison for baseline county-level models. Random Forest achieved the strongest baseline performance.}}{45}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:baseline_cv_r2_comparison}{{4.2}{45}{Cross-validation $R^2$ comparison for baseline county-level models. Random Forest achieved the strongest baseline performance}{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.3}{\ignorespaces Cross-validation RMSE comparison for baseline county-level models.}}{45}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:baseline_cv_rmse_comparison}{{4.3}{45}{Cross-validation RMSE comparison for baseline county-level models}{figure.caption.16}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.4}Baseline Diagnostics and Feature Importance}{46}{section.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.5}Ablation Analysis of County-Level Variables}{46}{section.4.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.4}{\ignorespaces Predicted versus actual log-transformed wildfire EAL for the best baseline model.}}{47}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:baseline_predicted_vs_actual}{{4.4}{47}{Predicted versus actual log-transformed wildfire EAL for the best baseline model}{figure.caption.17}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.5}{\ignorespaces Top Random Forest feature importances for the baseline county-level model.}}{47}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:baseline_rf_feature_importance}{{4.5}{47}{Top Random Forest feature importances for the baseline county-level model}{figure.caption.18}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.2}{\ignorespaces Random Forest ablation results for the baseline county-level feature set.}}{48}{table.caption.19}\protected@file@percent }
+\newlabel{tab:rf_ablation_performance_export}{{4.2}{48}{Random Forest ablation results for the baseline county-level feature set}{table.caption.19}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.6}{\ignorespaces Cross-validated $R^2$ under different feature-ablation settings.}}{48}{figure.caption.20}\protected@file@percent }
+\newlabel{fig:ablation_cv_r2}{{4.6}{48}{Cross-validated $R^2$ under different feature-ablation settings}{figure.caption.20}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.6}Environmental Augmentation of the County Model}{49}{section.4.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.3}{\ignorespaces Model comparison after adding environmental predictors to the county-level baseline dataset.}}{49}{table.caption.21}\protected@file@percent }
+\newlabel{tab:environmental_model_comparison_export}{{4.3}{49}{Model comparison after adding environmental predictors to the county-level baseline dataset}{table.caption.21}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.7}{\ignorespaces Random Forest performance gain from county-only predictors to environmental-only and combined predictor sets.}}{50}{figure.caption.22}\protected@file@percent }
+\newlabel{fig:environmental_performance_gain}{{4.7}{50}{Random Forest performance gain from county-only predictors to environmental-only and combined predictor sets}{figure.caption.22}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.7}Feature Importance in the Combined Model}{50}{section.4.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.4}{\ignorespaces Feature importance values for the combined Random Forest model after environmental augmentation.}}{51}{table.caption.23}\protected@file@percent }
+\newlabel{tab:combined_rf_feature_importance_export}{{4.4}{51}{Feature importance values for the combined Random Forest model after environmental augmentation}{table.caption.23}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.8}State-Wise Geographic Validation}{51}{section.4.8}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.8}{\ignorespaces Top feature importances for the combined Random Forest model. Environmental predictors dominate the most important variables.}}{52}{figure.caption.24}\protected@file@percent }
+\newlabel{fig:combined_rf_feature_importance}{{4.8}{52}{Top feature importances for the combined Random Forest model. Environmental predictors dominate the most important variables}{figure.caption.24}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.5}{\ignorespaces Random split and state-wise grouped validation results for county-only, environmental-only, and combined feature sets.}}{52}{table.caption.25}\protected@file@percent }
+\newlabel{tab:statewise_validation_results_export}{{4.5}{52}{Random split and state-wise grouped validation results for county-only, environmental-only, and combined feature sets}{table.caption.25}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.9}{\ignorespaces Comparison between random-split $R^2$ and state-wise grouped-validation $R^2$.}}{53}{figure.caption.26}\protected@file@percent }
+\newlabel{fig:random_vs_statewise_r2}{{4.9}{53}{Comparison between random-split $R^2$ and state-wise grouped-validation $R^2$}{figure.caption.26}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.10}{\ignorespaces Feature importances for the best model under state-wise grouped validation.}}{54}{figure.caption.27}\protected@file@percent }
+\newlabel{fig:grouped_model_feature_importance}{{4.10}{54}{Feature importances for the best model under state-wise grouped validation}{figure.caption.27}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.9}County-Level Risk Assessment Output}{54}{section.4.9}\protected@file@percent }
+\newlabel{sec:pipeline_output}{{4.9}{54}{County-Level Risk Assessment Output}{section.4.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.11}{\ignorespaces Predicted versus actual log-transformed wildfire EAL under grouped validation.}}{55}{figure.caption.28}\protected@file@percent }
+\newlabel{fig:grouped_predicted_vs_actual}{{4.11}{55}{Predicted versus actual log-transformed wildfire EAL under grouped validation}{figure.caption.28}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.6}{\ignorespaces Top 25 counties by predicted wildfire Expected Annual Loss from the final county-level risk-assessment pipeline.}}{56}{table.caption.29}\protected@file@percent }
+\newlabel{tab:top25_predicted_wildfire_risk_counties}{{4.6}{56}{Top 25 counties by predicted wildfire Expected Annual Loss from the final county-level risk-assessment pipeline}{table.caption.29}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.10}Exploratory Ecological Risk Proxy}{56}{section.4.10}\protected@file@percent }
+\newlabel{sec:ecological_proxy}{{4.10}{56}{Exploratory Ecological Risk Proxy}{section.4.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.7}{\ignorespaces Definition of the exploratory ecological risk proxy.}}{57}{table.caption.30}\protected@file@percent }
+\newlabel{tab:ecological_proxy_definition}{{4.7}{57}{Definition of the exploratory ecological risk proxy}{table.caption.30}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.12}{\ignorespaces Relationship between predicted wildfire Expected Annual Loss and natural vegetation fraction.}}{58}{figure.caption.31}\protected@file@percent }
+\newlabel{fig:predicted_eal_vs_natural_vegetation}{{4.12}{58}{Relationship between predicted wildfire Expected Annual Loss and natural vegetation fraction}{figure.caption.31}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.13}{\ignorespaces Distribution of the exploratory ecological risk proxy across counties.}}{58}{figure.caption.32}\protected@file@percent }
+\newlabel{fig:ecological_risk_proxy_distribution}{{4.13}{58}{Distribution of the exploratory ecological risk proxy across counties}{figure.caption.32}{}}
+\gdef \LT@i {\LT@entry 
+    {1}{63.21504pt}\LT@entry 
+    {1}{66.06006pt}\LT@entry 
+    {5}{42.86748pt}\LT@entry 
+    {1}{64.8621pt}\LT@entry 
+    {1}{77.90613pt}\LT@entry 
+    {1}{61.599pt}\LT@entry 
+    {1}{63.71786pt}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.8}{\ignorespaces Top 25 counties by exploratory ecological risk proxy. All listed counties fall in the Very High ecological risk category.}}{59}{table.4.8}\protected@file@percent }
+\newlabel{tab:top25_ecological_risk_proxy_counties}{{4.8}{59}{Top 25 counties by exploratory ecological risk proxy. All listed counties fall in the Very High ecological risk category}{table.4.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.11}Economic-Ecological Risk Overlap Analysis}{60}{section.4.11}\protected@file@percent }
+\newlabel{sec:economic_ecological_overlap}{{4.11}{60}{Economic-Ecological Risk Overlap Analysis}{section.4.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.14}{\ignorespaces Economic wildfire-risk percentile and natural vegetation exposure used to motivate ecological risk screening.}}{61}{figure.caption.33}\protected@file@percent }
+\newlabel{fig:economic_ecological_risk_quadrants_notebook7}{{4.14}{61}{Economic wildfire-risk percentile and natural vegetation exposure used to motivate ecological risk screening}{figure.caption.33}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.9}{\ignorespaces Economic--ecological risk-overlap quadrant summary.}}{61}{table.caption.34}\protected@file@percent }
+\newlabel{tab:economic_ecological_quadrant_summary}{{4.9}{61}{Economic--ecological risk-overlap quadrant summary}{table.caption.34}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.15}{\ignorespaces Economic--ecological overlap between predicted wildfire-risk percentile and natural vegetation exposure.}}{62}{figure.caption.35}\protected@file@percent }
+\newlabel{fig:economic_ecological_quadrant_scatter}{{4.15}{62}{Economic--ecological overlap between predicted wildfire-risk percentile and natural vegetation exposure}{figure.caption.35}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.10}{\ignorespaces Top counties with high predicted economic wildfire risk and high natural vegetation exposure.}}{62}{table.caption.36}\protected@file@percent }
+\newlabel{tab:high_economic_high_ecological_counties}{{4.10}{62}{Top counties with high predicted economic wildfire risk and high natural vegetation exposure}{table.caption.36}{}}
+\citation{suliman2026angiang}
+\@writefile{toc}{\contentsline {section}{\numberline {4.12}Supporting Results from the Vietnam Wildfire Prediction Study}{63}{section.4.12}\protected@file@percent }
+\newlabel{sec:vietnam_results}{{4.12}{63}{Supporting Results from the Vietnam Wildfire Prediction Study}{section.4.12}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.11}{\ignorespaces Key results from the supporting An Giang, Vietnam wildfire prediction study.}}{64}{table.caption.37}\protected@file@percent }
+\newlabel{tab:vietnam_study_results}{{4.11}{64}{Key results from the supporting An Giang, Vietnam wildfire prediction study}{table.caption.37}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.13}Summary of Current Results}{64}{section.4.13}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.12}{\ignorespaces Summary of county-level wildfire EAL modeling results.}}{64}{table.caption.38}\protected@file@percent }
+\newlabel{tab:prelim_results_summary}{{4.12}{64}{Summary of county-level wildfire EAL modeling results}{table.caption.38}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.14}Interpretation and Implications}{64}{section.4.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.15}Limitations and Future Work}{66}{section.4.15}\protected@file@percent }
+\@setckpt{chapters/chapter4_results}{
+\setcounter{page}{68}
+\setcounter{equation}{1}
+\setcounter{enumi}{3}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{0}
+\setcounter{chapter}{4}
+\setcounter{section}{15}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{15}
+\setcounter{table}{12}
+\setcounter{AM@survey}{0}
+\setcounter{caption@flags}{2}
+\setcounter{continuedfloat}{0}
+\setcounter{parentequation}{0}
+\setcounter{float@type}{4}
+\setcounter{nlinenum}{0}
+\setcounter{LT@tables}{1}
+\setcounter{LT@chunks}{5}
+\setcounter{NAT@ctr}{0}
+\setcounter{section@level}{1}
+\setcounter{Item}{13}
+\setcounter{Hfootnote}{0}
+\setcounter{bookmark@seq@number}{70}
+}

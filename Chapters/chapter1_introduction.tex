@@ -1,0 +1,48 @@
+\chapter{Introduction}
+\label{chap:introduction}
+
+Wildfires are becoming an increasingly significant source of economic, ecological, and public-health disruption in many regions of the world. In recent years, machine learning and deep learning have substantially improved the ability to predict wildfire occurrence, susceptibility, spread, and short-term fire danger. However, a major part of the literature still treats wildfire hazard prediction as an endpoint rather than as an input to broader consequence analysis. As a result, there remains a gap between wildfire prediction and wildfire-loss assessment, especially when the objective is to estimate impacts in monetary units or to connect fire-related conditions with broader ecological consequences.
+
+This thesis is motivated by that gap. The central idea is that wildfire risk should be viewed not only as the probability of fire occurrence, but also as a function of what is exposed, how vulnerable it is, and what losses may follow. In this sense, modern predictive modeling should support not only hazard estimation but also consequence-oriented analysis. This perspective is increasingly emphasized in recent literature on wildfire expected annual loss, economy-wide disruption, smoke-related health burdens, and ecological vulnerability \citep{asif2026supranational,wang2021economicfootprint,law2025anthropogenic,arrogantefunes2024ecological}.
+
+The present work focuses on county-level wildfire-loss modeling using publicly accessible datasets. As a first experimental direction, wildfire expected annual loss from the FEMA National Risk Index is used as a monetary target variable. This target is then modeled using county-level demographic, exposure, and resilience indicators, and later augmented with environmental predictors derived from publicly accessible geospatial datasets. In this way, the thesis develops a scalable baseline that connects wildfire-relevant environmental conditions with a consequence-oriented loss metric.
+
+The main objectives of the thesis are:
+\begin{enumerate}
+    \item to review recent literature at the intersection of wildfire prediction, wildfire-loss assessment, and emerging AI methods;
+    \item to construct a county-level wildfire-loss dataset in monetary units using accessible public data;
+    \item to evaluate whether county-level wildfire expected annual loss can be predicted from exposure, vulnerability, and environmental variables;
+    \item to assess how much environmental augmentation improves the predictive performance and geographic robustness of the resulting models.
+\end{enumerate}
+
+The novelty of this thesis is not limited to a particular study territory. Instead, the thesis proposes a general consequence-oriented wildfire-risk modeling workflow that can be adapted to other regions when comparable hazard, exposure, environmental, vulnerability, and loss-related data are available. The empirical implementation uses FEMA NRI wildfire Expected Annual Loss because it provides a standardized public monetary loss target, but the methodological logic is broader than this specific dataset.
+
+Unlike much previous wildfire-machine-learning work that treats wildfire occurrence, susceptibility, fire danger, or burned area as the final output, this thesis uses wildfire prediction as a step toward loss-oriented risk assessment. The new contribution is to connect environmental wildfire drivers, exposure and value indicators, social vulnerability, community resilience, and monetary expected loss in one machine-learning pipeline.
+
+The main contributions of the thesis are as follows:
+
+\begin{enumerate}
+    \item It provides a novel consequence-oriented framing of wildfire-risk modeling by shifting the focus from hazard prediction alone toward wildfire Expected Annual Loss estimation.
+    
+    \item It develops a new end-to-end machine-learning workflow that combines public risk indicators, exposure variables, vulnerability and resilience measures, topography, land cover, and climate predictors.
+    
+    \item Unlike models based only on socioeconomic or exposure variables, the thesis demonstrates that environmental augmentation substantially improves wildfire-loss prediction.
+    
+    \item It provides new insight into geographic transferability by comparing conventional random validation with state-wise grouped validation.
+    
+    \item It adds a novel exploratory ecological risk-screening layer that links predicted wildfire risk with natural vegetation exposure, without claiming to directly estimate ecological loss.
+    
+    \item It shows that the same general workflow can be extended beyond the current empirical territory to other regions, scales, and loss definitions, including event-level losses, asset-level exposure, ecological vulnerability, and post-fire recovery indicators.
+\end{enumerate}
+
+The experimental contribution of the thesis is a county-level wildfire Expected Annual Loss modeling pipeline built from FEMA National Risk Index data, followed by environmental augmentation using topography, land cover, and warm-season climate predictors. The results show that county-level wildfire loss can be modeled with meaningful predictive power and that environmental variables substantially improve both predictive performance and geographic transferability.
+
+The implemented empirical workflow is intentionally county-level and national-scale, rather than event-level, pixel-level, or parcel-level. This choice enables reproducible modeling with accessible public data, while fine-scale wildfire tensor construction is retained as a future extension in Appendix~\ref{app:creek_fire_pipeline}.
+
+Although the broader thesis theme includes both economic and ecological wildfire consequences, the implemented empirical pipeline focuses primarily on monetary wildfire Expected Annual Loss because FEMA NRI provides a standardized, publicly accessible county-level loss target. Ecological losses are not directly modeled as a separate damage target; however, the thesis adds an exploratory ecological risk-screening layer using natural vegetation exposure and predicted wildfire risk. This proxy-based analysis should be interpreted as ecological exposure/risk screening rather than direct ecological-loss estimation.
+
+In addition to the main FEMA/NRI county-level pipeline, the thesis also briefly reports key results from a previous Vietnam case study on wildfire risk prediction in An Giang Province. That study used a compact deep neural network with multi-source environmental predictors, fire-growth feature engineering, threshold optimization, and SHAP-based interpretability. It is included as supporting previous work because it demonstrates the author's earlier experience with fine-scale wildfire prediction, while the main empirical contribution of this thesis remains the FEMA/NRI county-level wildfire Expected Annual Loss assessment pipeline.
+
+Part of this work was successfully presented at the 4th International Conference on Distributed Computing and High Performance Computing (DCHPC 2026), held on 10--11 May 2026 in Tehran, Iran. The presented paper was entitled ``Mapping Forest Fire Risks Using Deep Learning: A Case Study in An Giang Province, Vietnam.'' The corresponding conference certificate is included in Appendix~\ref{app:conference_certificate}. The associated paper is expected to appear as a Web of Science/Scopus paper.
+
+The remainder of the thesis is organized as follows. Chapter~\ref{chap:litreview} reviews the recent literature on wildfire risk, loss, ecological vulnerability, and emerging AI methods. Chapter~\ref{chap:methodology} describes the dataset construction process, predictor engineering, modeling workflow, and evaluation strategy. Chapter~\ref{chap:results} presents the experimental results and risk assessment. Chapter~\ref{chap:discussion} discusses the implications and limitations of the findings. Finally, Chapter~\ref{chap:conclusion} concludes the thesis and outlines directions for future work.
