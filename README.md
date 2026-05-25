@@ -9,6 +9,8 @@
 
 The final version of the thesis is available as [`main.pdf`](./main.pdf).
 
+## 📁 Repository Structure
+
 .
 ├── main.pdf
 ├── Chapters/
