@@ -9,7 +9,7 @@
 
 The final version of the thesis is available as [`main.pdf`](./main.pdf).
 
-## Repository Structure
+## 📁 Repository Structure
 
 ```text
 .
