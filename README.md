@@ -12,7 +12,9 @@ The final version of the thesis is available as [`main.pdf`](./main.pdf).
 ## 📁 Repository Structure
 .
 ├── main.pdf # Full thesis text
+
 ├── Chapters/ # LaTeX source files of the thesis
+
 │ ├── chapter1_introduction.tex
 │ ├── chapter2_literature_review.tex
 │ ├── chapter3_methodology.tex
