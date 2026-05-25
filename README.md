@@ -9,30 +9,27 @@
 
 The final version of the thesis is available as [`main.pdf`](./main.pdf).
 
-## 📁 Repository Structure
 .
-├── main.pdf # Full thesis text
-
-├── Chapters/ # LaTeX source files of the thesis
-
-│ ├── chapter1_introduction.tex
-│ ├── chapter2_literature_review.tex
-│ ├── chapter3_methodology.tex
-│ ├── chapter4_results.tex
-│ ├── chapter5_discussion.tex
-│ └── chapter6_conclusion.tex
-│ └── main.tex
-│ └── references.bib
-├── Code files/ # Jupyter notebooks used for analysis
-│ ├── 1_target_construction.ipynb
-│ ├── 2_baseline_modeling.ipynb
-│ ├── 3_environmental_augmentation.ipynb
-│ ├── 4_ablation_analysis.ipynb
-│ ├── 5_grouped_validation.ipynb
-│ ├── 6_vietnam_supporting_study.ipynb
-│ ├── 7_ecological_risk_proxy.ipynb
-│ └── 8_economic_ecological_overlap.ipynb
-└── README.md # This file
+├── main.pdf
+├── Chapters/
+│   ├── chapter1_introduction.tex
+│   ├── chapter2_literature_review.tex
+│   ├── chapter3_methodology.tex
+│   ├── chapter4_results.tex
+│   ├── chapter5_discussion.tex
+│   ├── chapter6_conclusion.tex
+│   ├── main.tex
+│   └── references.bib
+├── Code files/
+│   ├── 1_target_construction.ipynb
+│   ├── 2_baseline_modeling.ipynb
+│   ├── 3_environmental_augmentation.ipynb
+│   ├── 4_ablation_analysis.ipynb
+│   ├── 5_grouped_validation.ipynb
+│   ├── 6_vietnam_supporting_study.ipynb
+│   ├── 7_ecological_risk_proxy.ipynb
+│   └── 8_economic_ecological_overlap.ipynb
+└── README.md
 
 
 
